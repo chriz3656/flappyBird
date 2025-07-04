@@ -1,0 +1,2358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird Ultimate - By Chriz</title>
+    <style>
+        /* Base Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #90EE90 70%, #90EE90 100%);
+            border: 3px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        #gameCanvas {
+            display: block;
+            background: transparent;
+        }
+
+        /* Screens */
+        .game-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 10;
+        }
+
+        #gameOverScreen, #shopScreen, #creditsScreen, #pauseScreen, #settingsScreen, #achievementsScreen {
+            display: none;
+        }
+
+        /* UI Elements */
+        .title {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: #FFD700;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 18px;
+            background: #FFD700;
+            color: #333;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+            margin: 5px;
+            min-width: 180px;
+        }
+
+        .btn:hover {
+            background: #FFA500;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,215,0,0.4);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+            min-width: 80px;
+        }
+
+        .btn-icon {
+            padding: 8px;
+            min-width: 40px;
+            font-size: 20px;
+        }
+
+        /* Game HUD */
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            z-index: 5;
+        }
+
+        #coins {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: gold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            z-index: 5;
+        }
+
+        #lives {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF6347;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            z-index: 5;
+        }
+
+        #multiplier {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            font-weight: bold;
+            color: gold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            z-index: 5;
+            display: none;
+        }
+
+        /* Power-up indicators */
+        .powerup-indicator {
+            position: absolute;
+            bottom: 60px;
+            left: 10px;
+            font-size: 12px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 15px;
+            display: none;
+        }
+
+        /* Volume control */
+        #volumeControl {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 100px;
+            display: flex;
+            align-items: center;
+            z-index: 5;
+        }
+
+        #volumeSlider {
+            width: 100%;
+            margin-left: 5px;
+        }
+
+        /* Shop items */
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .shop-item-info {
+            flex: 1;
+        }
+
+        .shop-item-name {
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .shop-item-desc {
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        .shop-item-price {
+            color: gold;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        /* Achievement popup */
+        .achievement-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border-left: 5px solid gold;
+            z-index: 20;
+            display: none;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+
+        .achievement-title {
+            color: gold;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .achievement-desc {
+            font-size: 14px;
+            color: white;
+        }
+
+        .achievement-reward {
+            color: #32CD32;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* Screen flash */
+        .screen-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.7);
+            z-index: 15;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Credits */
+        .credits-section {
+            width: 90%;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .credits-title {
+            color: #FFD700;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .credits-link {
+            color: #87CEEB;
+            text-decoration: none;
+        }
+
+        .credits-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Signature */
+        .signature {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-family: 'Brush Script MT', cursive;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+        }
+
+        /* Scrollable containers */
+        .scroll-container {
+            max-height: 350px;
+            overflow-y: auto;
+            width: 95%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb {
+            background: #FFD700;
+            border-radius: 4px;
+        }
+
+        /* Pause button */
+        #pauseBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 5;
+            display: none;
+        }
+
+        /* Settings */
+        .settings-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%;
+            margin: 10px 0;
+            padding: 10px;
+        }
+
+        .settings-label {
+            font-size: 16px;
+            color: white;
+        }
+
+        /* Day/Night cycle indicator */
+        #timeIndicator {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            font-size: 20px;
+            z-index: 5;
+        }
+
+        /* Mobile controls */
+        #mobileControls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: none;
+            justify-content: space-around;
+            z-index: 5;
+        }
+
+        .mobile-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: white;
+            user-select: none;
+        }
+
+        /* Achievement list */
+        .achievement-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .achievement-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            color: gold;
+        }
+
+        .achievement-locked {
+            filter: grayscale(100%);
+            opacity: 0.6;
+        }
+
+        /* Weather effects */
+        .weather-effect {
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* XP Bar */
+        #xpBarContainer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: rgba(0,0,0,0.2);
+            z-index: 5;
+        }
+
+        #xpBar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #4CAF50, #8BC34A);
+            transition: width 0.3s ease;
+        }
+
+        /* Level indicator */
+        #levelIndicator {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: white;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Weather effects container -->
+        <div id="weatherEffects"></div>
+        
+        <!-- Game elements -->
+        <button id="pauseBtn" onclick="togglePause()">⏸️</button>
+        <div id="score">0</div>
+        <div id="coins">0</div>
+        <div id="lives">❤️❤️❤️</div>
+        <div id="multiplier">x1</div>
+        <div id="timeIndicator">☀️</div>
+        <div id="levelIndicator">Lvl 1</div>
+        <div id="xpBarContainer"><div id="xpBar"></div></div>
+        
+        <!-- Power-up indicators -->
+        <div id="shieldIndicator" class="powerup-indicator">🛡️ Shield: 0s</div>
+        <div id="magnetIndicator" class="powerup-indicator">🧲 Magnet: 0s</div>
+        <div id="slowmoIndicator" class="powerup-indicator">⏱️ Slow Mo: 0s</div>
+        <div id="ghostIndicator" class="powerup-indicator">👻 Ghost: 0s</div>
+        
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        
+        <!-- Mobile controls -->
+        <div id="mobileControls">
+            <div class="mobile-btn" ontouchstart="jump()">↑</div>
+        </div>
+        
+        <!-- Game screens -->
+        <div id="startScreen" class="game-screen">
+            <div class="title">🐦 Flappy Bird Ultimate</div>
+            <div class="subtitle">By Chriz<br>Tap SPACE or click to flap your wings<br>Avoid the pipes and collect coins!</div>
+            <button class="btn" onclick="startGame()">Start Game</button>
+            <button class="btn" onclick="resetGameToDefault()">Reset Game</button>
+            <button class="btn" onclick="showShop()">Shop</button>
+            <button class="btn" onclick="showAchievementsScreen()">Achievements</button>
+            <button class="btn" onclick="showSettings()">Settings</button>
+            <button class="btn" onclick="showCredits()">Credits</button>
+            <div class="signature">Chriz3656</div>
+        </div>
+        
+        <div id="gameOverScreen" class="game-screen">
+            <div class="title">Game Over!</div>
+            <div class="subtitle">Your Score: <span id="finalScore">0</span><br>
+                Best Score: <span id="bestScore">0</span><br>
+                Coins Earned: <span id="earnedCoins">0</span><br>
+                XP Earned: <span id="earnedXP">0</span></div>
+            <button class="btn" onclick="restartGame()">Play Again</button>
+            <button class="btn" onclick="showShop()">Shop</button>
+            <button class="btn" onclick="returnToMenu()">Main Menu</button>
+        </div>
+        
+        <div id="shopScreen" class="game-screen">
+            <div class="title">🛒 Shop</div>
+            <div class="subtitle">Your Coins: <span id="shopCoins">0</span></div>
+            <div id="shopItems" class="scroll-container">
+                <!-- Shop items will be added dynamically -->
+            </div>
+            <button class="btn" onclick="returnToMenu()">Back to Menu</button>
+        </div>
+        
+        <div id="creditsScreen" class="game-screen">
+            <div class="title">🎮 Credits</div>
+            <div class="scroll-container">
+                <div class="credits-section">
+                    <div class="credits-title">Created by</div>
+                    <div>Chriz</div>
+                    <div>Digital Creator & Full-Stack Explorer</div>
+                </div>
+                <div class="credits-section">
+                    <div class="credits-title">Connect</div>
+                    <a href="https://chriz3656.github.io/" class="credits-link" target="_blank">chriz3656.github.io</a><br>
+                    <a href="mailto:mcplayerchris@gmail.com" class="credits-link">mcplayerchris@gmail.com</a><br>
+                    <a href="https://instagram.com/chriz_3656" class="credits-link" target="_blank">@chriz_3656</a>
+                </div>
+            </div>
+            <button class="btn" onclick="returnToMenu()">Back to Menu</button>
+        </div>
+        
+        <div id="pauseScreen" class="game-screen">
+            <div class="title">⏸️ Paused</div>
+            <button class="btn" onclick="togglePause()">Resume</button>
+            <button class="btn" onclick="returnToMenu()">Main Menu</button>
+            <button class="btn" onclick="showSettings()">Settings</button>
+        </div>
+        
+        <div id="settingsScreen" class="game-screen">
+            <div class="title">⚙️ Settings</div>
+            <div class="scroll-container">
+                <div class="settings-option">
+                    <span class="settings-label">Volume</span>
+                    <input type="range" id="volumeSliderSetting" min="0" max="1" step="0.1" value="0.5">
+                </div>
+                <div class="settings-option">
+                    <span class="settings-label">Colorblind Mode</span>
+                    <input type="checkbox" id="colorblindToggle">
+                </div>
+                <div class="settings-option">
+                    <span class="settings-label">Large Hitboxes</span>
+                    <input type="checkbox" id="hitboxToggle">
+                </div>
+                <div class="settings-option">
+                    <span class="settings-label">Day/Night Cycle</span>
+                    <input type="checkbox" id="dayNightToggle" checked>
+                </div>
+                <div class="settings-option">
+                    <span class="settings-label">Weather Effects</span>
+                    <input type="checkbox" id="weatherToggle" checked>
+                </div>
+            </div>
+            <button class="btn" onclick="saveSettings()">Save Settings</button>
+            <button class="btn" onclick="returnToMenu()">Back to Menu</button>
+        </div>
+        
+        <div id="achievementsScreen" class="game-screen">
+            <div class="title">🏆 Achievements</div>
+            <div class="subtitle">Unlock achievements for rewards!</div>
+            <div id="achievementsList" class="scroll-container">
+                <!-- Achievements will be added dynamically -->
+            </div>
+            <button class="btn" onclick="returnToMenu()">Back to Menu</button>
+        </div>
+        
+        <!-- Special effects -->
+        <div id="achievementPopup" class="achievement-popup">
+            <div class="achievement-title">Achievement Unlocked!</div>
+            <div class="achievement-desc"></div>
+            <div class="achievement-reward"></div>
+        </div>
+        
+        <div class="screen-flash" id="screenFlash"></div>
+    </div>
+
+    <script>
+        // Game elements
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameContainer = document.getElementById('gameContainer');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const shopScreen = document.getElementById('shopScreen');
+        const creditsScreen = document.getElementById('creditsScreen');
+        const pauseScreen = document.getElementById('pauseScreen');
+        const settingsScreen = document.getElementById('settingsScreen');
+        const achievementsScreen = document.getElementById('achievementsScreen');
+        const scoreElement = document.getElementById('score');
+        const coinsElement = document.getElementById('coins');
+        const livesElement = document.getElementById('lives');
+        const multiplierElement = document.getElementById('multiplier');
+        const timeIndicator = document.getElementById('timeIndicator');
+        const finalScoreElement = document.getElementById('finalScore');
+        const bestScoreElement = document.getElementById('bestScore');
+        const earnedCoinsElement = document.getElementById('earnedCoins');
+        const earnedXPElement = document.getElementById('earnedXP');
+        const shopCoinsElement = document.getElementById('shopCoins');
+        const shopItemsElement = document.getElementById('shopItems');
+        const achievementsList = document.getElementById('achievementsList');
+        const achievementPopup = document.getElementById('achievementPopup');
+        const screenFlash = document.getElementById('screenFlash');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const mobileControls = document.getElementById('mobileControls');
+        const weatherEffects = document.getElementById('weatherEffects');
+        const xpBar = document.getElementById('xpBar');
+        const levelIndicator = document.getElementById('levelIndicator');
+        
+        // Power-up indicators
+        const shieldIndicator = document.getElementById('shieldIndicator');
+        const magnetIndicator = document.getElementById('magnetIndicator');
+        const slowmoIndicator = document.getElementById('slowmoIndicator');
+        const ghostIndicator = document.getElementById('ghostIndicator');
+        
+        // Settings elements
+        const volumeSliderSetting = document.getElementById('volumeSliderSetting');
+        const colorblindToggle = document.getElementById('colorblindToggle');
+        const hitboxToggle = document.getElementById('hitboxToggle');
+        const dayNightToggle = document.getElementById('dayNightToggle');
+        const weatherToggle = document.getElementById('weatherToggle');
+
+        // Game variables
+        let gameState = 'start'; // 'start', 'playing', 'paused', 'gameOver'
+        let score = 0;
+        let bestScore = 0;
+        let coins = 0;
+        let earnedCoins = 0;
+        let lives = 3;
+        let gameSpeed = 2;
+        let gravity = 0.5;
+        let jumpPower = -10;
+        let volume = 0.5;
+        let gameVolume = 0.5;
+        let isMobile = false;
+        let gamePaused = false;
+        let gameTime = 0;
+        let isDayTime = true;
+        let currentWeather = 'none';
+        let weatherIntensity = 0;
+        let xp = 0;
+        let level = 1;
+        let xpToNextLevel = 100;
+        let scoreMultiplier = 1;
+        let colorblindMode = false;
+        let largeHitboxes = false;
+        let dayNightCycle = true;
+        let weatherEffectsEnabled = true;
+
+        // Power-up variables
+        let shieldActive = false;
+        let shieldTime = 0;
+        let magnetActive = false;
+        let magnetTime = 0;
+        let slowmoActive = false;
+        let slowmoTime = 0;
+        let ghostActive = false;
+        let ghostTime = 0;
+        let powerups = [];
+        let collectedCoins = [];
+        let particles = [];
+        let weatherParticles = [];
+
+        // Achievement variables
+        const achievements = {
+            firstGame: { unlocked: false, name: "First Flight", desc: "Play your first game", reward: 10, icon: "✈️" },
+            firstDeath: { unlocked: false, name: "First Crash", desc: "Experience your first game over", reward: 5, icon: "💥" },
+            score10: { unlocked: false, name: "Decade", desc: "Score 10 points", reward: 20, icon: "🔟" },
+            score25: { unlocked: false, name: "Quarter Century", desc: "Score 25 points", reward: 50, icon: "2️⃣5️⃣" },
+            score50: { unlocked: false, name: "Half Century", desc: "Score 50 points", reward: 100, icon: "5️⃣0️⃣" },
+            score100: { unlocked: false, name: "Century", desc: "Score 100 points", reward: 250, icon: "💯" },
+            coinCollector: { unlocked: false, name: "Coin Collector", desc: "Collect 10 coins in one game", reward: 30, icon: "💰" },
+            coinHoarder: { unlocked: false, name: "Coin Hoarder", desc: "Collect 50 coins in one game", reward: 100, icon: "🤑" },
+            powerupFan: { unlocked: false, name: "Power-up Fan", desc: "Use 3 power-ups in one game", reward: 25, icon: "✨" },
+            powerupMaster: { unlocked: false, name: "Power-up Master", desc: "Use 10 power-ups in one game", reward: 75, icon: "🎯" },
+            nightOwl: { unlocked: false, name: "Night Owl", desc: "Play during night time", reward: 15, icon: "🌙" },
+            rainyDay: { unlocked: false, name: "Rainy Day", desc: "Play during rain", reward: 15, icon: "🌧️" },
+            level5: { unlocked: false, name: "Apprentice", desc: "Reach level 5", reward: 50, icon: "⭐" },
+            level10: { unlocked: false, name: "Adept", desc: "Reach level 10", reward: 100, icon: "🌟" },
+            level20: { unlocked: false, name: "Master", desc: "Reach level 20", reward: 250, icon: "💫" }
+        };
+        let powerupsUsed = 0;
+        let coinsCollectedThisGame = 0;
+
+        // Bird skins
+        const birdSkins = {
+            default: { color: '#FFD700', wingColor: '#FFA500', price: 0, owned: true },
+            blue: { color: '#4682B4', wingColor: '#1E90FF', price: 100, owned: false },
+            red: { color: '#FF6347', wingColor: '#B22222', price: 150, owned: false },
+            rainbow: { color: 'rainbow', wingColor: 'rainbow', price: 300, owned: false },
+            ghost: { color: 'rgba(200, 200, 255, 0.7)', wingColor: 'rgba(150, 150, 255, 0.7)', price: 200, owned: false }
+        };
+        let currentSkin = 'default';
+        let wingFlapAngle = 0;
+        let wingFlapDirection = 1;
+
+        // Shop items
+        const shopItems = [
+            { id: 'shield', name: "🛡️ Shield Power-up", desc: "Protects from collisions for 5 seconds", price: 50, owned: 0 },
+            { id: 'life', name: "❤️ Extra Life", desc: "Gives you an extra life", price: 30, owned: 0 },
+            { id: 'magnet', name: "🧲 Magnet Power-up", desc: "Attracts coins for 7 seconds", price: 60, owned: 0 },
+            { id: 'ghost', name: "👻 Ghost Mode", desc: "Pass through pipes for 8 seconds", price: 100, owned: 0 },
+            { id: 'blueSkin', name: "🐦 Blue Bird Skin", desc: "Unlocks the blue bird skin", price: 100, owned: false },
+            { id: 'redSkin', name: "🔥 Red Bird Skin", desc: "Unlocks the red bird skin", price: 150, owned: false },
+            { id: 'rainbowSkin', name: "🌈 Rainbow Skin", desc: "Unlocks the rainbow bird skin", price: 300, owned: false },
+            { id: 'ghostSkin', name: "👻 Ghost Skin", desc: "Unlocks the ghost bird skin", price: 200, owned: false },
+            { id: 'speed', name: "⚡ Speed Boost", desc: "Permanent speed boost for all games", price: 75, owned: false },
+            { id: 'xpBoost', name: "📈 XP Boost", desc: "Earn 20% more XP", price: 150, owned: false }
+        ];
+
+        // Sound effects
+        const sounds = {
+    jump: new Audio('game_assets/sound/jump.mp3'),
+    score: new Audio('game_assets/sound/coin-received.mp3'),
+    coin: new Audio('game_assets/sound/coin-collision.mp3'),
+    powerup: new Audio('game_assets/sound/power-up.mp3'),
+    collision: new Audio('game_assets/sound/item-pick-up.mp3'),
+    achievement: new Audio('game_assets/sound/achievement.mp3'),
+    rain: new Audio('game_assets/sound/rain-sounds.mp3'),
+    night: new Audio('game_assets/sound/night-sky.mp3')
+};
+
+        // Initialize sounds
+        Object.values(sounds).forEach(sound => {
+            sound.volume = gameVolume;
+            sound.loop = false;
+        });
+        sounds.rain.loop = true;
+        sounds.night.loop = true;
+
+        // Bird object
+        const bird = {
+            x: 80,
+            y: 300,
+            width: 30,
+            height: 25,
+            velocity: 0,
+            get color() { 
+                if (birdSkins[currentSkin].color === 'rainbow') {
+                    const hue = (Date.now() / 50) % 360;
+                    return `hsl(${hue}, 100%, 50%)`;
+                }
+                return birdSkins[currentSkin].color; 
+            },
+            get wingColor() { 
+                if (birdSkins[currentSkin].wingColor === 'rainbow') {
+                    const hue = (Date.now() / 50 + 180) % 360;
+                    return `hsl(${hue}, 100%, 50%)`;
+                }
+                return birdSkins[currentSkin].wingColor; 
+            }
+        };
+
+        // Pipes array
+        let pipes = [];
+        const pipeWidth = 60;
+        const pipeGap = 180;
+        const pipeInterval = 150; // Distance between pipes
+        let pipeTimer = 0;
+
+        // Background elements
+        let clouds = [];
+
+        // Check if mobile device
+        function checkIfMobile() {
+            isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+                mobileControls.style.display = 'flex';
+            }
+        }
+
+        // Load game data from localStorage
+        function loadGameData() {
+            const savedData = localStorage.getItem('flappyBirdUltimateData');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    bestScore = data.bestScore || 0;
+                    coins = data.coins || 0;
+                    currentSkin = data.currentSkin || 'default';
+                    xp = data.xp || 0;
+                    level = data.level || 1;
+                    xpToNextLevel = calculateXPToNextLevel();
+                    
+                    // Load achievements
+                    if (data.achievements) {
+                        for (const key in data.achievements) {
+                            if (achievements[key]) {
+                                achievements[key].unlocked = data.achievements[key];
+                            }
+                        }
+                    }
+                    
+                    // Load shop items
+                    if (data.shopItems) {
+                        shopItems.forEach(item => {
+                            if (data.shopItems[item.id] !== undefined) {
+                                item.owned = data.shopItems[item.id];
+                            }
+                        });
+                    }
+                    
+                    // Load bird skins
+                    if (data.birdSkins) {
+                        for (const skin in data.birdSkins) {
+                            if (birdSkins[skin]) {
+                                birdSkins[skin].owned = data.birdSkins[skin];
+                            }
+                        }
+                    }
+                    
+                    // Load settings
+                    if (data.settings) {
+                        gameVolume = data.settings.volume || 0.5;
+                        colorblindMode = data.settings.colorblind || false;
+                        largeHitboxes = data.settings.hitboxes || false;
+                        dayNightCycle = data.settings.dayNight !== false;
+                        weatherEffectsEnabled = data.settings.weather !== false;
+                        
+                        // Apply speed boost if purchased
+                        if (data.speedBoost) {
+                            gameSpeed = 2.5;
+                        }
+                        
+                        // Apply XP boost if purchased
+                        if (data.xpBoost) {
+                            xpToNextLevel = calculateXPToNextLevel();
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error loading saved data:", e);
+                    resetGameToDefault();
+                }
+            }
+            
+            // Update UI
+            updateShopDisplay();
+            updateAchievementsDisplay();
+            coinsElement.textContent = coins;
+            updateXPBar();
+            levelIndicator.textContent = `Lvl ${level}`;
+            
+            // Apply settings to UI
+            volumeSliderSetting.value = gameVolume;
+            colorblindToggle.checked = colorblindMode;
+            hitboxToggle.checked = largeHitboxes;
+            dayNightToggle.checked = dayNightCycle;
+            weatherToggle.checked = weatherEffectsEnabled;
+            
+            // Set initial volume
+            Object.values(sounds).forEach(sound => {
+                sound.volume = gameVolume;
+            });
+        }
+
+        // Save game data to localStorage
+        function saveGameData() {
+            const achievementsData = {};
+            for (const key in achievements) {
+                achievementsData[key] = achievements[key].unlocked;
+            }
+            
+            const shopItemsData = {};
+            shopItems.forEach(item => {
+                shopItemsData[item.id] = item.owned;
+            });
+            
+            const birdSkinsData = {};
+            for (const skin in birdSkins) {
+                birdSkinsData[skin] = birdSkins[skin].owned;
+            }
+            
+            const settingsData = {
+                volume: gameVolume,
+                colorblind: colorblindMode,
+                hitboxes: largeHitboxes,
+                dayNight: dayNightCycle,
+                weather: weatherEffectsEnabled
+            };
+            
+            const gameData = {
+                bestScore,
+                coins,
+                currentSkin,
+                xp,
+                level,
+                achievements: achievementsData,
+                shopItems: shopItemsData,
+                birdSkins: birdSkinsData,
+                settings: settingsData,
+                speedBoost: shopItems.find(item => item.id === 'speed').owned,
+                xpBoost: shopItems.find(item => item.id === 'xpBoost').owned
+            };
+            
+            try {
+                localStorage.setItem('flappyBirdUltimateData', JSON.stringify(gameData));
+            } catch (e) {
+                console.error("Error saving game data:", e);
+            }
+        }
+
+        // Calculate XP needed for next level
+        function calculateXPToNextLevel() {
+            const xpBoost = shopItems.find(item => item.id === 'xpBoost').owned ? 0.8 : 1;
+            return Math.floor(100 * Math.pow(1.2, level - 1)) * xpBoost;
+        }
+
+        // Add XP
+        function addXP(amount) {
+            xp += amount;
+            if (xp >= xpToNextLevel) {
+                levelUp();
+            }
+            updateXPBar();
+        }
+
+        // Level up
+        function levelUp() {
+            xp -= xpToNextLevel;
+            level++;
+            xpToNextLevel = calculateXPToNextLevel();
+            levelIndicator.textContent = `Lvl ${level}`;
+            
+            // Give level up reward
+            const reward = level * 10;
+            coins += reward;
+            coinsElement.textContent = coins;
+            
+            showAchievement("Level Up!", `Reached level ${level}`, `+${reward} coins`);
+            
+            // Check for level achievements
+            if (level === 5 && !achievements.level5.unlocked) {
+                unlockAchievement('level5');
+            } else if (level === 10 && !achievements.level10.unlocked) {
+                unlockAchievement('level10');
+            } else if (level === 20 && !achievements.level20.unlocked) {
+                unlockAchievement('level20');
+            }
+        }
+
+        // Update XP bar
+        function updateXPBar() {
+            const percentage = (xp / xpToNextLevel) * 100;
+            xpBar.style.width = `${Math.min(100, percentage)}%`;
+        }
+
+        // Initialize clouds
+        function initClouds() {
+            clouds = [];
+            for (let i = 0; i < 5; i++) {
+                clouds.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * 200 + 50,
+                    width: Math.random() * 40 + 30,
+                    height: Math.random() * 15 + 10,
+                    speed: Math.random() * 0.5 + 0.2
+                });
+            }
+        }
+
+        // Initialize weather
+        function initWeather() {
+            weatherParticles = [];
+            if (!weatherEffectsEnabled) return;
+            
+            // Random weather pattern
+            const weatherTypes = ['none', 'rain', 'snow'];
+            currentWeather = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
+            weatherIntensity = Math.random() * 0.5 + 0.5;
+            
+            // Clear previous weather effects
+            weatherEffects.innerHTML = '';
+            
+            // Add weather class
+            weatherEffects.className = '';
+            weatherEffects.classList.add(currentWeather);
+            
+            // Stop all weather sounds
+            sounds.rain.pause();
+            sounds.night.pause();
+            
+            // Play appropriate sounds
+            if (currentWeather === 'rain') {
+                sounds.rain.currentTime = 0;
+                sounds.rain.play();
+            } else if (!isDayTime) {
+                sounds.night.currentTime = 0;
+                sounds.night.play();
+            }
+            
+            // Check for weather achievements
+            if (currentWeather === 'rain' && !achievements.rainyDay.unlocked) {
+                unlockAchievement('rainyDay');
+            }
+        }
+
+        // Draw bird
+        function drawBird() {
+            ctx.save();
+            
+            // Bird body
+            ctx.fillStyle = bird.color;
+            ctx.beginPath();
+            ctx.ellipse(bird.x + bird.width/2, bird.y + bird.height/2, bird.width/2, bird.height/2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Animate wing flap
+            wingFlapAngle += wingFlapDirection * 0.2;
+            if (wingFlapAngle > 0.5 || wingFlapAngle < -0.5) {
+                wingFlapDirection *= -1;
+            }
+            
+            // Bird wing
+            ctx.fillStyle = bird.wingColor;
+            ctx.beginPath();
+            ctx.ellipse(
+                bird.x + bird.width/2 - 5, 
+                bird.y + bird.height/2, 
+                bird.width/3, 
+                bird.height/3, 
+                wingFlapAngle, 
+                0, 
+                Math.PI * 2
+            );
+            ctx.fill();
+            
+            // Bird eye
+            ctx.fillStyle = colorblindMode ? 'black' : 'white';
+            ctx.beginPath();
+            ctx.arc(bird.x + bird.width/2 + 8, bird.y + bird.height/2 - 3, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(bird.x + bird.width/2 + 10, bird.y + bird.height/2 - 3, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Bird beak
+            ctx.fillStyle = colorblindMode ? '#FFA500' : '#FF6347';
+            ctx.beginPath();
+            ctx.moveTo(bird.x + bird.width, bird.y + bird.height/2);
+            ctx.lineTo(bird.x + bird.width + 8, bird.y + bird.height/2 - 2);
+            ctx.lineTo(bird.x + bird.width + 8, bird.y + bird.height/2 + 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Shield effect if active
+            if (shieldActive) {
+                ctx.strokeStyle = 'rgba(0, 191, 255, 0.7)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(bird.x + bird.width/2, bird.y + bird.height/2, bird.width/2 + 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Ghost effect if active
+            if (ghostActive) {
+                ctx.strokeStyle = 'rgba(200, 200, 255, 0.7)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(bird.x + bird.width/2, bird.y + bird.height/2, bird.width/2 + 3, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Debug hitbox
+            if (largeHitboxes) {
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(bird.x + bird.width/2, bird.y + bird.height/2, bird.width, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+
+        // Draw pipes
+        function drawPipes() {
+            pipes.forEach(pipe => {
+                // Pipe gradient
+                const gradient = ctx.createLinearGradient(pipe.x, 0, pipe.x + pipeWidth, 0);
+                if (colorblindMode) {
+                    gradient.addColorStop(0, '#5E5E5E');
+                    gradient.addColorStop(0.5, '#3E3E3E');
+                    gradient.addColorStop(1, '#1E1E1E');
+                } else {
+                    gradient.addColorStop(0, '#32CD32');
+                    gradient.addColorStop(0.5, '#228B22');
+                    gradient.addColorStop(1, '#006400');
+                }
+                
+                ctx.fillStyle = gradient;
+                
+                // Top pipe
+                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+                // Bottom pipe
+                ctx.fillRect(pipe.x, pipe.topHeight + pipeGap, pipeWidth, canvas.height - pipe.topHeight - pipeGap);
+                
+                // Pipe borders
+                ctx.strokeStyle = colorblindMode ? '#000000' : '#004400';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+                ctx.strokeRect(pipe.x, pipe.topHeight + pipeGap, pipeWidth, canvas.height - pipe.topHeight - pipeGap);
+                
+                // Pipe caps
+                ctx.fillStyle = colorblindMode ? '#3E3E3E' : '#228B22';
+                ctx.fillRect(pipe.x - 5, pipe.topHeight - 20, pipeWidth + 10, 20);
+                ctx.fillRect(pipe.x - 5, pipe.topHeight + pipeGap, pipeWidth + 10, 20);
+                
+                ctx.strokeStyle = colorblindMode ? '#000000' : '#004400';
+                ctx.strokeRect(pipe.x - 5, pipe.topHeight - 20, pipeWidth + 10, 20);
+                ctx.strokeRect(pipe.x - 5, pipe.topHeight + pipeGap, pipeWidth + 10, 20);
+                
+                // Golden pipe chance
+                if (pipe.isGolden) {
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                    ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+                    ctx.fillRect(pipe.x, pipe.topHeight + pipeGap, pipeWidth, canvas.height - pipe.topHeight - pipeGap);
+                }
+                
+                // Moving pipe
+                if (pipe.moving) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                    ctx.fillRect(pipe.x, pipe.topHeight - 10, pipeWidth, 10);
+                    ctx.fillRect(pipe.x, pipe.topHeight + pipeGap, pipeWidth, 10);
+                }
+            });
+        }
+
+        // Draw power-ups
+        function drawPowerups() {
+            powerups.forEach(powerup => {
+                ctx.save();
+                
+                // Draw power-up
+                switch(powerup.type) {
+                    case 'shield':
+                        ctx.fillStyle = 'rgba(0, 191, 255, 0.8)';
+                        ctx.beginPath();
+                        ctx.arc(powerup.x, powerup.y, 15, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = 'white';
+                        ctx.font = '20px Arial';
+                        ctx.fillText('🛡️', powerup.x - 10, powerup.y + 8);
+                        break;
+                    case 'magnet':
+                        ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+                        ctx.beginPath();
+                        ctx.arc(powerup.x, powerup.y, 15, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = 'white';
+                        ctx.font = '20px Arial';
+                        ctx.fillText('🧲', powerup.x - 10, powerup.y + 8);
+                        break;
+                    case 'slowmo':
+                        ctx.fillStyle = 'rgba(138, 43, 226, 0.8)';
+                        ctx.beginPath();
+                        ctx.arc(powerup.x, powerup.y, 15, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = 'white';
+                        ctx.font = '20px Arial';
+                        ctx.fillText('⏱️', powerup.x - 10, powerup.y + 8);
+                        break;
+                    case 'ghost':
+                        ctx.fillStyle = 'rgba(200, 200, 255, 0.8)';
+                        ctx.beginPath();
+                        ctx.arc(powerup.x, powerup.y, 15, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = 'white';
+                        ctx.font = '20px Arial';
+                        ctx.fillText('👻', powerup.x - 10, powerup.y + 8);
+                        break;
+                }
+                
+                // Pulsing effect
+                const pulseSize = Math.sin(Date.now() / 200) * 2 + 20;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(powerup.x, powerup.y, pulseSize, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.restore();
+            });
+        }
+
+        // Draw coins
+        function drawCoins() {
+            collectedCoins.forEach(coin => {
+                ctx.save();
+                
+                // Coin gradient
+                const gradient = ctx.createRadialGradient(
+                    coin.x, coin.y, 5,
+                    coin.x, coin.y, 10
+                );
+                gradient.addColorStop(0, coin.isGolden ? '#FFD700' : '#FFD700');
+                gradient.addColorStop(1, coin.isGolden ? '#FFA500' : '#FFA500');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Coin shine
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.beginPath();
+                ctx.arc(coin.x - 3, coin.y - 3, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Coin spinning effect
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, 10, Math.PI * 0.25 + Date.now() / 200, Math.PI * 0.75 + Date.now() / 200);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, 10, Math.PI * 1.25 + Date.now() / 200, Math.PI * 1.75 + Date.now() / 200);
+                ctx.stroke();
+                
+                ctx.restore();
+            });
+        }
+
+        // Draw background clouds
+        function drawClouds() {
+            ctx.fillStyle = isDayTime ? 'rgba(255, 255, 255, 0.6)' : 'rgba(150, 150, 150, 0.6)';
+            clouds.forEach(cloud => {
+                ctx.beginPath();
+                ctx.ellipse(cloud.x, cloud.y, cloud.width/2, cloud.height/2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.ellipse(cloud.x + cloud.width/3, cloud.y - cloud.height/3, cloud.width/3, cloud.height/3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Draw ground
+        function drawGround() {
+            const groundHeight = 50;
+            const gradient = ctx.createLinearGradient(0, canvas.height - groundHeight, 0, canvas.height);
+            if (colorblindMode) {
+                gradient.addColorStop(0, '#5E5E5E');
+                gradient.addColorStop(1, '#3E3E3E');
+            } else {
+                gradient.addColorStop(0, isDayTime ? '#90EE90' : '#556B2F');
+                gradient.addColorStop(1, isDayTime ? '#228B22' : '#2F4F4F');
+            }
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+            
+            // Ground pattern
+            ctx.strokeStyle = colorblindMode ? '#000000' : (isDayTime ? '#006400' : '#2F4F4F');
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i, canvas.height - groundHeight);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+        }
+
+        // Draw particles
+        function drawParticles() {
+            particles.forEach(particle => {
+                ctx.save();
+                ctx.globalAlpha = particle.life / 30;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        // Draw weather effects
+        function drawWeather() {
+            if (!weatherEffectsEnabled) return;
+            
+            weatherParticles.forEach(particle => {
+                ctx.save();
+                ctx.globalAlpha = particle.opacity;
+                ctx.fillStyle = particle.color;
+                
+                if (currentWeather === 'snow') {
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else { // rain
+                    ctx.fillRect(particle.x, particle.y, 2, 10);
+                }
+                
+                ctx.restore();
+            });
+        }
+
+        // Update particles
+        function updateParticles() {
+            // Update existing particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.life--;
+            });
+            
+            // Update weather particles
+            if (weatherEffectsEnabled && currentWeather !== 'none') {
+                weatherParticles = weatherParticles.filter(p => p.y < canvas.height);
+                
+                // Add new particles
+                if (Math.random() < weatherIntensity) {
+                    const particle = {
+                        x: Math.random() * canvas.width,
+                        y: -10,
+                        size: Math.random() * 3 + 1,
+                        speedX: currentWeather === 'snow' ? (Math.random() * 2 - 1) : 0,
+                        speedY: currentWeather === 'snow' ? (Math.random() * 2 + 1) : (Math.random() * 5 + 5),
+                        color: currentWeather === 'snow' ? 'white' : 'rgba(200, 200, 255, 0.7)',
+                        opacity: Math.random() * 0.5 + 0.3
+                    };
+                    weatherParticles.push(particle);
+                }
+                
+                weatherParticles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                });
+            }
+        }
+
+        // Create new pipe
+        function createPipe() {
+            // Only create new pipe if the last pipe is far enough
+            if (pipes.length > 0 && pipes[pipes.length-1].x > canvas.width - pipeInterval) {
+                return;
+            }
+            
+            const topHeight = Math.random() * (canvas.height - pipeGap - 100) + 50;
+            const isGolden = Math.random() < 0.05; // 5% chance for golden pipe
+            const isMoving = Math.random() < 0.1; // 10% chance for moving pipe
+            
+            const pipe = {
+                x: canvas.width,
+                topHeight: topHeight,
+                scored: false,
+                isGolden: isGolden,
+                moving: isMoving,
+                moveDirection: isMoving ? (Math.random() > 0.5 ? 1 : -1) : 0,
+                moveSpeed: isMoving ? (Math.random() * 0.5 + 0.5) : 0
+            };
+            
+            pipes.push(pipe);
+            
+            // Random chance to add a coin or power-up with the pipe
+            if (Math.random() < 0.4) {
+                const type = Math.random();
+                if (type < 0.7) { // 70% chance for coin
+                    collectedCoins.push({
+                        x: canvas.width + pipeWidth/2,
+                        y: topHeight + pipeGap/2,
+                        width: 20,
+                        height: 20,
+                        isGolden: Math.random() < 0.1 // 10% chance for golden coin
+                    });
+                } else { // 30% chance for power-up
+                    const powerupTypes = ['shield', 'magnet', 'slowmo', 'ghost'];
+                    const weights = [0.4, 0.3, 0.2, 0.1]; // Weighted probabilities
+                    let rand = Math.random();
+                    let powerupType = 'shield';
+                    let cumulativeWeight = 0;
+                    
+                    for (let i = 0; i < powerupTypes.length; i++) {
+                        cumulativeWeight += weights[i];
+                        if (rand <= cumulativeWeight) {
+                            powerupType = powerupTypes[i];
+                            break;
+                        }
+                    }
+                    
+                    powerups.push({
+                        x: canvas.width + pipeWidth/2,
+                        y: topHeight + pipeGap/2,
+                        type: powerupType,
+                        width: 30,
+                        height: 30
+                    });
+                }
+            }
+        }
+
+        // Update game logic
+        function update() {
+            if (gameState !== 'playing' || gamePaused) return;
+            
+            // Update game time and day/night cycle
+            gameTime += 1/60;
+            if (dayNightCycle && gameTime % 60 < 0.016) { // Every minute
+                isDayTime = !isDayTime;
+                timeIndicator.textContent = isDayTime ? '☀️' : '🌙';
+                
+                // Play appropriate sounds
+                if (currentWeather !== 'rain') {
+                    if (isDayTime) {
+                        sounds.night.pause();
+                    } else {
+                        sounds.night.currentTime = 0;
+                        sounds.night.play();
+                    }
+                }
+                
+                // Check for night achievement
+                if (!isDayTime && !achievements.nightOwl.unlocked) {
+                    unlockAchievement('nightOwl');
+                }
+            }
+            
+            // Random weather changes
+            if (weatherEffectsEnabled && Math.random() < 0.0005) { // 0.05% chance per frame
+                initWeather();
+            }
+            
+            // Update particles
+            updateParticles();
+            
+            // Update bird
+            bird.velocity += gravity;
+            bird.y += bird.velocity;
+            
+            // Update clouds
+            clouds.forEach(cloud => {
+                cloud.x -= cloud.speed * (slowmoActive ? 0.5 : 1);
+                if (cloud.x + cloud.width < 0) {
+                    cloud.x = canvas.width + Math.random() * 100;
+                    cloud.y = Math.random() * 200 + 50;
+                }
+            });
+            
+            // Create pipes
+            pipeTimer++;
+            if (pipeTimer > 90 / (slowmoActive ? 2 : 1)) {
+                createPipe();
+                pipeTimer = 0;
+            }
+            
+            // Update pipes
+            pipes.forEach((pipe, index) => {
+                pipe.x -= gameSpeed * (slowmoActive ? 0.5 : 1);
+                
+                // Update moving pipes
+                if (pipe.moving) {
+                    pipe.topHeight += pipe.moveSpeed * pipe.moveDirection;
+                    
+                    // Reverse direction at boundaries
+                    if (pipe.topHeight < 50) {
+                        pipe.topHeight = 50;
+                        pipe.moveDirection *= -1;
+                    } else if (pipe.topHeight > canvas.height - pipeGap - 50) {
+                        pipe.topHeight = canvas.height - pipeGap - 50;
+                        pipe.moveDirection *= -1;
+                    }
+                }
+                
+                // Score
+                if (!pipe.scored && pipe.x + pipeWidth < bird.x) {
+                    pipe.scored = true;
+                    const points = pipe.isGolden ? 5 : 1;
+                    score += points * scoreMultiplier;
+                    scoreElement.textContent = score;
+                    playSound('score');
+                    triggerScreenFlash('rgba(255, 255, 255, 0.7)');
+                    
+                    // Golden pipe bonus
+                    if (pipe.isGolden) {
+                        const bonus = 10;
+                        coins += bonus;
+                        earnedCoins += bonus;
+                        coinsElement.textContent = coins;
+                        showAchievement("Golden Pipe!", "You passed a golden pipe!", `+${bonus} coins`);
+                    }
+                    
+                    // Increase difficulty
+                    if (score % 5 === 0) {
+                        gameSpeed += 0.1;
+                    }
+                    
+                    // Milestone bonus
+                    if (score % 10 === 0) {
+                        const bonus = (score / 10) * 5 * scoreMultiplier;
+                        coins += bonus;
+                        earnedCoins += bonus;
+                        coinsElement.textContent = coins;
+                        showAchievement("Milestone", `Reached ${score} points!`, `+${bonus} coins`);
+                    }
+                    
+                    // Check for achievement
+                    if (score >= 10 && !achievements.score10.unlocked) {
+                        unlockAchievement('score10');
+                    } else if (score >= 25 && !achievements.score25.unlocked) {
+                        unlockAchievement('score25');
+                    } else if (score >= 50 && !achievements.score50.unlocked) {
+                        unlockAchievement('score50');
+                    } else if (score >= 100 && !achievements.score100.unlocked) {
+                        unlockAchievement('score100');
+                    }
+                }
+                
+                // Remove off-screen pipes
+                if (pipe.x + pipeWidth < 0) {
+                    pipes.splice(index, 1);
+                }
+            });
+            
+            // Update power-ups
+            powerups.forEach((powerup, index) => {
+                powerup.x -= gameSpeed * (slowmoActive ? 0.5 : 1);
+                
+                // Check for collection
+                if (checkCollision(bird, powerup)) {
+                    collectPowerup(powerup.type);
+                    powerups.splice(index, 1);
+                }
+                
+                // Remove off-screen power-ups
+                if (powerup.x + powerup.width < 0) {
+                    powerups.splice(index, 1);
+                }
+            });
+            
+            // Update coins
+            collectedCoins.forEach((coin, index) => {
+                // Magnet effect
+                if (magnetActive && distance(bird, coin) < 150) {
+                    const angle = Math.atan2(bird.y + bird.height/2 - coin.y, bird.x + bird.width/2 - coin.x);
+                    coin.x += Math.cos(angle) * 5;
+                    coin.y += Math.sin(angle) * 5;
+                } else {
+                    coin.x -= gameSpeed * (slowmoActive ? 0.5 : 1);
+                }
+                
+                // Check for collection
+                if (checkCollision(bird, coin)) {
+                    collectCoin(coin);
+                    collectedCoins.splice(index, 1);
+                }
+                
+                // Remove off-screen coins
+                if (coin.x + coin.width < 0) {
+                    collectedCoins.splice(index, 1);
+                }
+            });
+            
+            // Update active power-ups
+            updatePowerups();
+            
+            // Collision detection
+            checkCollisions();
+        }
+
+        // Check collision between two objects
+        function checkCollision(obj1, obj2) {
+            // Use larger hitboxes if enabled
+            const sizeMultiplier = largeHitboxes ? 1.5 : 1;
+            
+            return obj1.x < obj2.x + (obj2.width * sizeMultiplier) &&
+                   obj1.x + (obj1.width * sizeMultiplier) > obj2.x &&
+                   obj1.y < obj2.y + (obj2.height * sizeMultiplier) &&
+                   obj1.y + (obj1.height * sizeMultiplier) > obj2.y;
+        }
+
+        // Calculate distance between two objects
+        function distance(obj1, obj2) {
+            const dx = (obj1.x + obj1.width/2) - (obj2.x + obj2.width/2);
+            const dy = (obj1.y + obj1.height/2) - (obj2.y + obj2.height/2);
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // Update active power-ups
+        function updatePowerups() {
+            // Update shield
+            if (shieldActive) {
+                shieldTime -= 1/60;
+                shieldIndicator.textContent = `🛡️ Shield: ${Math.ceil(shieldTime)}s`;
+                
+                if (shieldTime <= 0) {
+                    shieldActive = false;
+                    shieldIndicator.style.display = 'none';
+                }
+            }
+            
+            // Update magnet
+            if (magnetActive) {
+                magnetTime -= 1/60;
+                magnetIndicator.textContent = `🧲 Magnet: ${Math.ceil(magnetTime)}s`;
+                
+                if (magnetTime <= 0) {
+                    magnetActive = false;
+                    magnetIndicator.style.display = 'none';
+                }
+            }
+            
+            // Update slowmo
+            if (slowmoActive) {
+                slowmoTime -= 1/60;
+                slowmoIndicator.textContent = `⏱️ Slow Mo: ${Math.ceil(slowmoTime)}s`;
+                
+                if (slowmoTime <= 0) {
+                    slowmoActive = false;
+                    slowmoIndicator.style.display = 'none';
+                }
+            }
+            
+            // Update ghost
+            if (ghostActive) {
+                ghostTime -= 1/60;
+                ghostIndicator.textContent = `👻 Ghost: ${Math.ceil(ghostTime)}s`;
+                
+                if (ghostTime <= 0) {
+                    ghostActive = false;
+                    ghostIndicator.style.display = 'none';
+                }
+            }
+        }
+
+        // Collect a power-up
+        function collectPowerup(type) {
+            playSound('powerup');
+            triggerScreenFlash('rgba(255, 255, 255, 0.5)');
+            powerupsUsed++;
+            
+            // Check for achievement
+            if (powerupsUsed >= 3 && !achievements.powerupFan.unlocked) {
+                unlockAchievement('powerupFan');
+            }
+            if (powerupsUsed >= 10 && !achievements.powerupMaster.unlocked) {
+                unlockAchievement('powerupMaster');
+            }
+            
+            switch(type) {
+                case 'shield':
+                    shieldActive = true;
+                    shieldTime = Math.max(shieldTime, 5); // Don't stack, just reset to 5 if already active
+                    shieldIndicator.style.display = 'block';
+                    break;
+                case 'magnet':
+                    magnetActive = true;
+                    magnetTime = Math.max(magnetTime, 7); // Don't stack, just reset to 7 if already active
+                    magnetIndicator.style.display = 'block';
+                    break;
+                case 'slowmo':
+                    slowmoActive = true;
+                    slowmoTime = Math.max(slowmoTime, 4); // Don't stack, just reset to 4 if already active
+                    slowmoIndicator.style.display = 'block';
+                    break;
+                case 'ghost':
+                    ghostActive = true;
+                    ghostTime = Math.max(ghostTime, 8); // Don't stack, just reset to 8 if already active
+                    ghostIndicator.style.display = 'block';
+                    break;
+            }
+            
+            // Create collection particles
+            createParticles(bird.x + bird.width/2, bird.y + bird.height/2, 10, getPowerupColor(type));
+        }
+
+        // Get color for power-up particles
+        function getPowerupColor(type) {
+            switch(type) {
+                case 'shield': return 'rgba(0, 191, 255, 0.8)';
+                case 'magnet': return 'rgba(255, 215, 0, 0.8)';
+                case 'slowmo': return 'rgba(138, 43, 226, 0.8)';
+                case 'ghost': return 'rgba(200, 200, 255, 0.8)';
+                default: return 'white';
+            }
+        }
+
+        // Collect a coin
+        function collectCoin(coin) {
+            playSound('coin');
+            triggerScreenFlash('rgba(255, 215, 0, 0.3)');
+            
+            // Add coins
+            const coinValue = coin.isGolden ? 10 : 5;
+            coins += coinValue;
+            earnedCoins += coinValue;
+            coinsCollectedThisGame++;
+            coinsElement.textContent = coins;
+            
+            // Create coin collection particles
+            createParticles(coin.x, coin.y, 10, coin.isGolden ? 'gold' : '#FFD700');
+            
+            // Check for achievement
+            if (coinsCollectedThisGame >= 10 && !achievements.coinCollector.unlocked) {
+                unlockAchievement('coinCollector');
+            }
+            if (coinsCollectedThisGame >= 50 && !achievements.coinHoarder.unlocked) {
+                unlockAchievement('coinHoarder');
+            }
+        }
+
+        // Create particles for visual effects
+        function createParticles(x, y, count, color) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    size: Math.random() * 5 + 2,
+                    speedX: Math.random() * 6 - 3,
+                    speedY: Math.random() * 6 - 3,
+                    color: color,
+                    life: 30
+                });
+            }
+        }
+
+        // Check collisions
+        function checkCollisions() {
+            // Ground and ceiling collision
+            if (bird.y + bird.height > canvas.height - 50 || bird.y < 0) {
+                if (!shieldActive && !ghostActive) {
+                    loseLife();
+                } else {
+                    // Bounce off with shield
+                    bird.velocity = -bird.velocity * 0.5;
+                }
+                return;
+            }
+
+            // Pipe collision
+            pipes.forEach(pipe => {
+                if (bird.x + bird.width > pipe.x && 
+                    bird.x < pipe.x + pipeWidth) {
+                    if (bird.y < pipe.topHeight || 
+                        bird.y + bird.height > pipe.topHeight + pipeGap) {
+                        if (!shieldActive && !ghostActive) {
+                            loseLife();
+                        }
+                    }
+                }
+            });
+        }
+
+        // Lose a life
+        function loseLife() {
+            lives--;
+            livesElement.textContent = '❤️'.repeat(Math.max(0, lives));
+            playSound('collision');
+            createParticles(bird.x + bird.width/2, bird.y + bird.height/2, 15, '#FF6347');
+            
+            if (lives <= 0) {
+                gameOver();
+            } else {
+                // Reset bird position after hit
+                bird.y = 300;
+                bird.velocity = 0;
+            }
+        }
+
+        // Play sound effect
+        function playSound(type) {
+            if (sounds[type]) {
+                try {
+                    sounds[type].currentTime = 0;
+                    sounds[type].play().catch(e => console.log("Sound play error:", e));
+                } catch (e) {
+                    console.log("Sound error:", e);
+                }
+            }
+        }
+
+        // Trigger screen flash effect
+        function triggerScreenFlash(color) {
+            screenFlash.style.backgroundColor = color;
+            screenFlash.style.opacity = '0.7';
+            
+            let opacity = 0.7;
+            const fadeInterval = setInterval(() => {
+                opacity -= 0.05;
+                screenFlash.style.opacity = opacity;
+                
+                if (opacity <= 0) {
+                    clearInterval(fadeInterval);
+                    screenFlash.style.opacity = '0';
+                }
+            }, 30);
+        }
+
+        // Unlock achievement
+        function unlockAchievement(key) {
+            if (!achievements[key] || achievements[key].unlocked) return;
+            
+            achievements[key].unlocked = true;
+            const achievement = achievements[key];
+            
+            // Show achievement popup
+            document.querySelector('.achievement-title').textContent = achievement.name;
+            document.querySelector('.achievement-desc').textContent = achievement.desc;
+            document.querySelector('.achievement-reward').textContent = `Reward: +${achievement.reward} coins`;
+            
+            achievementPopup.style.display = 'block';
+            playSound('achievement');
+            
+            // Add reward coins
+            coins += achievement.reward;
+            earnedCoins += achievement.reward;
+            coinsElement.textContent = coins;
+            shopCoinsElement.textContent = coins;
+            
+            // Hide after delay
+            setTimeout(() => {
+                achievementPopup.style.display = 'none';
+            }, 3000);
+            
+            // Update achievements display
+            updateAchievementsDisplay();
+            
+            // Save game
+            saveGameData();
+        }
+
+        // Show achievement (for milestones)
+        function showAchievement(title, desc, reward) {
+            document.querySelector('.achievement-title').textContent = title;
+            document.querySelector('.achievement-desc').textContent = desc;
+            document.querySelector('.achievement-reward').textContent = reward;
+            
+            achievementPopup.style.display = 'block';
+            playSound('achievement');
+            
+            // Hide after delay
+            setTimeout(() => {
+                achievementPopup.style.display = 'none';
+            }, 3000);
+        }
+
+        // Update achievements display
+        function updateAchievementsDisplay() {
+            achievementsList.innerHTML = '';
+            
+            for (const key in achievements) {
+                const achievement = achievements[key];
+                const achievementItem = document.createElement('div');
+                achievementItem.className = `achievement-item ${achievement.unlocked ? '' : 'achievement-locked'}`;
+                
+                const icon = document.createElement('div');
+                icon.className = 'achievement-icon';
+                icon.textContent = achievement.icon;
+                
+                const info = document.createElement('div');
+                info.className = 'achievement-info';
+                
+                const name = document.createElement('div');
+                name.className = 'achievement-name';
+                name.textContent = achievement.name;
+                name.style.fontWeight = 'bold';
+                name.style.color = achievement.unlocked ? '#FFD700' : '#999';
+                
+                const desc = document.createElement('div');
+                desc.className = 'achievement-desc';
+                desc.textContent = achievement.desc;
+                desc.style.fontSize = '12px';
+                desc.style.color = achievement.unlocked ? '#ccc' : '#666';
+                
+                const reward = document.createElement('div');
+                reward.className = 'achievement-reward';
+                reward.textContent = `Reward: ${achievement.reward} coins`;
+                reward.style.fontSize = '12px';
+                reward.style.color = achievement.unlocked ? '#32CD32' : '#666';
+                
+                info.appendChild(name);
+                info.appendChild(desc);
+                info.appendChild(reward);
+                
+                achievementItem.appendChild(icon);
+                achievementItem.appendChild(info);
+                
+                achievementsList.appendChild(achievementItem);
+            }
+        }
+
+        // Draw everything
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Apply day/night filter
+            if (!isDayTime) {
+                ctx.fillStyle = 'rgba(0, 0, 50, 0.3)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Draw background elements
+            drawClouds();
+            drawWeather();
+            drawGround();
+            drawPipes();
+            drawPowerups();
+            drawCoins();
+            drawParticles();
+            drawBird();
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Jump function - Simplified to original Flappy Bird mechanics
+        function jump() {
+            if (gameState === 'playing' && !gamePaused) {
+                bird.velocity = jumpPower;
+                playSound('jump');
+                createParticles(bird.x + bird.width/2, bird.y + bird.height/2, 5, 'rgba(255, 255, 255, 0.8)');
+            }
+        }
+
+        // Toggle pause
+        function togglePause() {
+            if (gameState !== 'playing') return;
+            
+            gamePaused = !gamePaused;
+            
+            if (gamePaused) {
+                pauseScreen.style.display = 'flex';
+                sounds.rain.pause();
+                sounds.night.pause();
+            } else {
+                pauseScreen.style.display = 'none';
+                if (currentWeather === 'rain') {
+                    sounds.rain.play().catch(e => console.log("Rain sound error:", e));
+                } else if (!isDayTime) {
+                    sounds.night.play().catch(e => console.log("Night sound error:", e));
+                }
+            }
+        }
+
+        // Start game
+        function startGame() {
+            if (gameState === 'playing') return;
+            
+            gameState = 'playing';
+            gamePaused = false;
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            shopScreen.style.display = 'none';
+            creditsScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            settingsScreen.style.display = 'none';
+            achievementsScreen.style.display = 'none';
+            pauseBtn.style.display = 'block';
+            resetGame();
+            
+            // Initialize weather
+            initWeather();
+            
+            // Check for first game achievement
+            if (!achievements.firstGame.unlocked) {
+                unlockAchievement('firstGame');
+            }
+        }
+
+        // Game over
+        function gameOver() {
+            gameState = 'gameOver';
+            gamePaused = false;
+            pauseBtn.style.display = 'none';
+            playSound('collision');
+            
+            // Update best score
+            if (score > bestScore) {
+                bestScore = score;
+            }
+            
+            // Calculate XP earned (based on score and coins)
+            const xpEarned = Math.floor(score * 2 + coinsCollectedThisGame * 3);
+            addXP(xpEarned);
+            
+            finalScoreElement.textContent = score;
+            bestScoreElement.textContent = bestScore;
+            earnedCoinsElement.textContent = earnedCoins;
+            earnedXPElement.textContent = xpEarned;
+            gameOverScreen.style.display = 'flex';
+            
+            // Stop weather sounds
+            sounds.rain.pause();
+            sounds.night.pause();
+            
+            // Check for first death achievement
+            if (!achievements.firstDeath.unlocked) {
+                unlockAchievement('firstDeath');
+            }
+            
+            // Save game
+            saveGameData();
+        }
+
+        // Restart game
+        function restartGame() {
+            gameState = 'playing';
+            gamePaused = false;
+            gameOverScreen.style.display = 'none';
+            pauseBtn.style.display = 'block';
+            resetGame();
+        }
+
+        // Return to main menu
+        function returnToMenu() {
+            gameState = 'start';
+            gamePaused = false;
+            gameOverScreen.style.display = 'none';
+            shopScreen.style.display = 'none';
+            creditsScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            settingsScreen.style.display = 'none';
+            achievementsScreen.style.display = 'none';
+            pauseBtn.style.display = 'none';
+            startScreen.style.display = 'flex';
+            
+            // Stop weather sounds
+            sounds.rain.pause();
+            sounds.night.pause();
+        }
+
+        // Reset game to default state
+        function resetGameToDefault() {
+            // Clear all saved data
+            localStorage.removeItem('flappyBirdUltimateData');
+            
+            // Reset all game variables to default
+            bestScore = 0;
+            coins = 0;
+            currentSkin = 'default';
+            xp = 0;
+            level = 1;
+            xpToNextLevel = 100;
+            
+            // Reset achievements
+            for (const key in achievements) {
+                achievements[key].unlocked = false;
+            }
+            
+            // Reset shop items
+            shopItems.forEach(item => {
+                if (typeof item.owned === 'number') {
+                    item.owned = 0;
+                } else {
+                    item.owned = false;
+                }
+            });
+            
+            // Reset bird skins
+            for (const skin in birdSkins) {
+                birdSkins[skin].owned = skin === 'default';
+            }
+            
+            // Reset settings
+            gameVolume = 0.5;
+            colorblindMode = false;
+            largeHitboxes = false;
+            dayNightCycle = true;
+            weatherEffectsEnabled = true;
+            gameSpeed = 2;
+            
+            // Update UI
+            coinsElement.textContent = coins;
+            updateXPBar();
+            levelIndicator.textContent = `Lvl ${level}`;
+            updateShopDisplay();
+            updateAchievementsDisplay();
+            
+            // Apply settings to UI
+            volumeSliderSetting.value = gameVolume;
+            colorblindToggle.checked = colorblindMode;
+            hitboxToggle.checked = largeHitboxes;
+            dayNightToggle.checked = dayNightCycle;
+            weatherToggle.checked = weatherEffectsEnabled;
+            
+            // Set initial volume
+            Object.values(sounds).forEach(sound => {
+                sound.volume = gameVolume;
+            });
+            
+            // Reset current game state
+            resetGame();
+            returnToMenu();
+            
+            // Show confirmation
+            showAchievement("Game Reset", "All progress has been reset", "Back to default settings");
+        }
+
+        // Show shop screen
+        function showShop() {
+            shopScreen.style.display = 'flex';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            shopCoinsElement.textContent = coins;
+            updateShopDisplay();
+        }
+
+        // Show credits screen
+        function showCredits() {
+            creditsScreen.style.display = 'flex';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+        }
+
+        // Show settings screen
+        function showSettings() {
+            settingsScreen.style.display = 'flex';
+            startScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+        }
+
+        // Save settings
+        function saveSettings() {
+            gameVolume = parseFloat(volumeSliderSetting.value);
+            colorblindMode = colorblindToggle.checked;
+            largeHitboxes = hitboxToggle.checked;
+            dayNightCycle = dayNightToggle.checked;
+            weatherEffectsEnabled = weatherToggle.checked;
+            
+            // Apply volume
+            Object.values(sounds).forEach(sound => {
+                sound.volume = gameVolume;
+            });
+            
+            // Save settings
+            saveGameData();
+            returnToMenu();
+        }
+
+        // Show achievements screen
+        function showAchievementsScreen() {
+            achievementsScreen.style.display = 'flex';
+            startScreen.style.display = 'none';
+            updateAchievementsDisplay();
+        }
+
+        // Update shop display
+        function updateShopDisplay() {
+            shopItemsElement.innerHTML = '';
+            
+            shopItems.forEach(item => {
+                const shopItem = document.createElement('div');
+                shopItem.className = 'shop-item';
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'shop-item-info';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'shop-item-name';
+                nameDiv.textContent = item.name;
+                
+                const descDiv = document.createElement('div');
+                descDiv.className = 'shop-item-desc';
+                descDiv.textContent = item.desc;
+                
+                infoDiv.appendChild(nameDiv);
+                infoDiv.appendChild(descDiv);
+                
+                const priceDiv = document.createElement('div');
+                priceDiv.className = 'shop-item-price';
+                priceDiv.textContent = `${item.price} coins`;
+                
+                const buyBtn = document.createElement('button');
+                buyBtn.className = 'btn btn-small';
+                
+                if (item.owned) {
+                    if (typeof item.owned === 'number') {
+                        buyBtn.textContent = `Owned (${item.owned})`;
+                    } else {
+                        buyBtn.textContent = 'Owned';
+                    }
+                    buyBtn.disabled = true;
+                } else if (coins >= item.price) {
+                    buyBtn.textContent = 'Buy';
+                    buyBtn.onclick = () => buyItem(item.id);
+                } else {
+                    buyBtn.textContent = 'Not Enough';
+                    buyBtn.disabled = true;
+                }
+                
+                shopItem.appendChild(infoDiv);
+                shopItem.appendChild(priceDiv);
+                shopItem.appendChild(buyBtn);
+                
+                shopItemsElement.appendChild(shopItem);
+            });
+            
+            // Add bird skins to shop
+            for (const skin in birdSkins) {
+                if (skin === 'default') continue;
+                
+                const skinItem = document.createElement('div');
+                skinItem.className = 'shop-item';
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'shop-item-info';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'shop-item-name';
+                nameDiv.textContent = `Bird Skin: ${skin.charAt(0).toUpperCase() + skin.slice(1)}`;
+                
+                const descDiv = document.createElement('div');
+                descDiv.className = 'shop-item-desc';
+                descDiv.textContent = `Unlock the ${skin} bird skin`;
+                
+                infoDiv.appendChild(nameDiv);
+                infoDiv.appendChild(descDiv);
+                
+                const priceDiv = document.createElement('div');
+                priceDiv.className = 'shop-item-price';
+                priceDiv.textContent = `${birdSkins[skin].price} coins`;
+                
+                const buyBtn = document.createElement('button');
+                buyBtn.className = 'btn btn-small';
+                
+                if (birdSkins[skin].owned) {
+                    buyBtn.textContent = skin === currentSkin ? 'Equipped' : 'Equip';
+                    buyBtn.onclick = () => equipSkin(skin);
+                } else if (coins >= birdSkins[skin].price) {
+                    buyBtn.textContent = 'Buy';
+                    buyBtn.onclick = () => buySkin(skin);
+                } else {
+                    buyBtn.textContent = 'Not Enough';
+                    buyBtn.disabled = true;
+                }
+                
+                skinItem.appendChild(infoDiv);
+                skinItem.appendChild(priceDiv);
+                skinItem.appendChild(buyBtn);
+                
+                shopItemsElement.appendChild(skinItem);
+            }
+        }
+
+        // Buy item from shop
+        function buyItem(itemId) {
+            const item = shopItems.find(i => i.id === itemId);
+            if (!item || coins < item.price) return;
+            
+            coins -= item.price;
+            coinsElement.textContent = coins;
+            shopCoinsElement.textContent = coins;
+            
+            if (typeof item.owned === 'number') {
+                item.owned++;
+            } else {
+                item.owned = true;
+            }
+            
+            // Apply effects
+            if (itemId === 'life') {
+                lives++;
+                livesElement.textContent = '❤️'.repeat(lives);
+                showAchievement("Extra Life", "You bought an extra life!", "Now you can survive longer!");
+            } else if (itemId === 'speed') {
+                gameSpeed = 2.5;
+                showAchievement("Speed Boost", "You unlocked permanent speed boost!", "Games will be faster now!");
+            } else if (itemId === 'xpBoost') {
+                xpToNextLevel = calculateXPToNextLevel();
+                showAchievement("XP Boost", "You unlocked XP boost!", "Level up faster now!");
+            }
+            
+            updateShopDisplay();
+            saveGameData();
+            
+            // Visual feedback
+            triggerScreenFlash('rgba(255, 215, 0, 0.3)');
+        }
+
+        // Buy bird skin
+        function buySkin(skin) {
+            if (!birdSkins[skin] || coins < birdSkins[skin].price) return;
+            
+            coins -= birdSkins[skin].price;
+            coinsElement.textContent = coins;
+            shopCoinsElement.textContent = coins;
+            
+            birdSkins[skin].owned = true;
+            currentSkin = skin;
+            
+            updateShopDisplay();
+            saveGameData();
+            
+            // Visual feedback
+            triggerScreenFlash('rgba(255, 215, 0, 0.3)');
+            showAchievement("New Skin", `You unlocked the ${skin} skin!`, "Lookin' good!");
+        }
+
+        // Equip bird skin
+        function equipSkin(skin) {
+            if (!birdSkins[skin] || !birdSkins[skin].owned) return;
+            
+            currentSkin = skin;
+            updateShopDisplay();
+            saveGameData();
+            
+            // Visual feedback
+            triggerScreenFlash('rgba(255, 255, 255, 0.3)');
+        }
+
+        // Reset game
+        function resetGame() {
+            bird.y = 300;
+            bird.velocity = 0;
+            pipes = [];
+            powerups = [];
+            collectedCoins = [];
+            particles = [];
+            score = 0;
+            lives = 3;
+            earnedCoins = 0;
+            coinsCollectedThisGame = 0;
+            powerupsUsed = 0;
+            scoreMultiplier = 1;
+            scoreElement.textContent = score;
+            livesElement.textContent = '❤️❤️❤️';
+            multiplierElement.style.display = 'none';
+            pipeTimer = 0;
+            gameTime = 0;
+            isDayTime = true;
+            timeIndicator.textContent = '☀️';
+            gameSpeed = shopItems.find(item => item.id === 'speed').owned ? 2.5 : 2;
+            
+            // Reset power-ups
+            shieldActive = false;
+            magnetActive = false;
+            slowmoActive = false;
+            ghostActive = false;
+            shieldIndicator.style.display = 'none';
+            magnetIndicator.style.display = 'none';
+            slowmoIndicator.style.display = 'none';
+            ghostIndicator.style.display = 'none';
+            
+            // Initialize clouds
+            initClouds();
+            
+            // Initialize weather
+            initWeather();
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                jump();
+            } else if (e.code === 'Escape') {
+                togglePause();
+            }
+        });
+
+        canvas.addEventListener('click', jump);
+        
+        // Check for mobile device
+        checkIfMobile();
+
+        // Initialize and start game loop
+        loadGameData();
+        initClouds();
+        gameLoop();
+    </script>
+</body>
+</html>
